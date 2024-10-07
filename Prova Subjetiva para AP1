@@ -1,0 +1,168 @@
+import pandas as pd
+import os
+
+# Produtos da loja em estoque.
+produtos = {
+    '001': {'nome': 'Caneta', 'quantidade': 100, 'preco': 2.50},
+    '002': {'nome': 'Caderno', 'quantidade': 50, 'preco': 10.00},
+    '003': {'nome': 'Borracha', 'quantidade': 150, 'preco': 1.00},
+    '004': {'nome': 'Lápis', 'quantidade': 200, 'preco': 2.50},
+    '005': {'nome': 'Estojo', 'quantidade': 75, 'preco': 5.00}
+}
+
+# Vendas
+vendas = []
+
+def carregar_dados():
+    # Carregar os produtos de um arquivo, se existir
+    if os.path.exists('produtos.txt'):
+        with open('produtos.txt', 'r') as f:
+            for linha in f:
+                codigo, nome, quantidade, preco = linha.strip().split(',')
+                produtos[codigo] = {'nome': nome, 'quantidade': int(quantidade), 'preco': float(preco)}
+
+    # Carregar as vendas de um arquivo CSV, se existir
+    if os.path.exists('vendas.csv'):
+        df_vendas = pd.read_csv('vendas.csv')
+        for _, row in df_vendas.iterrows():
+            vendas.append({
+                'codigo': row['codigo'],
+                'nome': row['nome'],
+                'quantidade_vendida': int(row['quantidade_vendida']),
+                'valor_total': float(row['valor_total'])
+            })
+
+# Função para cadastrar novos produtos
+def cadastrar_produto():
+    codigo = input("Digite o código do produto: ")
+    if codigo in produtos:
+        print("Código de produto já cadastrado.\n")
+        return
+
+    nome = input("Digite o nome do produto: ")
+    quantidade = int(input("Digite a quantidade em estoque: "))
+    preco = float(input("Digite o preço por unidade: "))
+
+    produtos[codigo] = {
+        'nome': nome,
+        'quantidade': quantidade,
+        'preco': preco
+    }
+    print(f"Produto '{nome}' cadastrado com sucesso!\n")
+
+# Função para registrar uma venda
+def registrar_venda():
+    codigo = input("Digite o código do produto vendido: ")
+
+    # Verifica se o produto existe
+    if codigo not in produtos:
+        print("Produto não encontrado!\n")
+        return
+
+    # Verifica se há estoque suficiente
+    quantidade_venda = int(input("Digite a quantidade vendida: "))
+    if quantidade_venda > produtos[codigo]['quantidade']:
+        print("Estoque insuficiente!\n")
+        return
+
+    # Calcula o valor da venda
+    valor_venda = quantidade_venda * produtos[codigo]['preco']
+
+    # Atualiza o estoque do produto
+    produtos[codigo]['quantidade'] -= quantidade_venda
+
+    # Registra a venda
+    vendas.append({
+        'codigo': codigo,
+        'nome': produtos[codigo]['nome'],
+        'quantidade_vendida': quantidade_venda,
+        'valor_total': valor_venda
+    })
+
+    print(f"Venda de {quantidade_venda} unidades de '{produtos[codigo]['nome']}' registrada com sucesso!\n")
+
+# Função para gerar relatório de vendas (CSV)
+def gerar_relatorio_vendas():
+    df_vendas = pd.DataFrame(vendas)
+    df_vendas.columns = ['codigo', 'nome', 'quantidade_vendida', 'valor_total']
+
+    # Gera um arquivo CSV
+    df_vendas.to_csv('vendas.csv', index=False)
+    print("Relatório de vendas gerado e salvo como 'vendas.csv'.\n")
+
+# Função para gerar relatório de estoque (arquivo de texto)
+def gerar_relatorio_estoque():
+    with open('estoque.txt', 'w') as f:
+        f.write('Código, Nome, Quantidade em Estoque\n')
+        for codigo, info in produtos.items():
+            f.write(f"{codigo}, {info['nome']}, {info['quantidade']}\n")
+
+    print("Relatório de estoque gerado e salvo como 'estoque.txt'.\n")
+
+# Função para salvar os produtos cadastrados em um arquivo de texto
+def salvar_produtos():
+    with open('produtos.txt', 'w') as f:
+        for codigo, info in produtos.items():
+            f.write(f"{codigo},{info['nome']},{info['quantidade']},{info['preco']}\n")
+
+# Função para exibir o menu principal
+def menu():
+    carregar_dados()  # Carrega os dados existentes de produtos e vendas
+
+    while True:
+        print("1. Cadastrar Produto")
+        print("2. Registrar Venda")
+        print("3. Gerar Relatório de Vendas (CSV)")
+        print("4. Gerar Relatório de Estoque (Arquivo de Texto)")
+        print("5. Sair")
+
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == "1":
+            cadastrar_produto()
+        elif opcao == "2":
+            registrar_venda()
+        elif opcao == "3":
+            gerar_relatorio_vendas()
+        elif opcao == "4":
+            gerar_relatorio_estoque()
+        elif opcao == "5":
+            salvar_produtos()  # Salva os produtos antes de sair
+            print("Saindo do sistema...")
+            break
+        else:
+            print("Opção inválida! Tente novamente.\n")
+
+# Executa o menu
+
+def registrar_venda():
+    codigo = input("Digite o código do produto vendido: ")
+
+    # Verifica se o produto existe
+    if codigo not in produtos:
+        print("Erro: Produto não encontrado!\n")
+        return  # Sai da função se o produto não for encontrado
+
+    # Verifica se há estoque suficiente
+    quantidade_venda = int(input("Digite a quantidade vendida: "))
+    if quantidade_venda > produtos[codigo]['quantidade']:
+        print("Erro: Estoque insuficiente!\n")
+        return  # Sai da função se a quantidade for maior que o estoque disponível
+
+    # Calcula o valor da venda
+    valor_venda = quantidade_venda * produtos[codigo]['preco']
+
+    # Atualiza o estoque do produto
+    produtos[codigo]['quantidade'] -= quantidade_venda
+
+    # Registra a venda
+    vendas.append({
+        'codigo': codigo,
+        'nome': produtos[codigo]['nome'],
+        'quantidade_vendida': quantidade_venda,
+        'valor_total': valor_venda
+    })
+
+    print(f"Venda de {quantidade_venda} unidades de '{produtos[codigo]['nome']}' registrada com sucesso!\n")
+
+menu()
